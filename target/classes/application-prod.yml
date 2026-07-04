@@ -29,11 +29,8 @@ app:
     phone: "8344515186"
   upload:
     dir: /tmp/uploads/products
-  jwt:
-    secret: ${JWT_SECRET}
-    expiration-ms: 86400000
   cors:
-    allowed-origins: https://beautytextile.web.app,https://beautytextile.com
+    allowed-origins: https://beautytextile.web.app,https://beautytextile.com,https://beauty-textile-frontend.pages.dev,https://beauty-textile-backend.onrender.com
   razorpay:
     enabled: ${RAZORPAY_ENABLED:false}
     key-id: ${RAZORPAY_KEY_ID:rzp_test_placeholder}

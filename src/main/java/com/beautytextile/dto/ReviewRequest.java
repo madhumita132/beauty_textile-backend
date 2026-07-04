@@ -6,5 +6,6 @@ public record ReviewRequest(
         String customerName,
         String mobileNumber,   // optional
         int rating,            // 1–5
-        String reviewComment
+        String reviewComment,
+        String reviewImageUrl  // optional
 ) {}

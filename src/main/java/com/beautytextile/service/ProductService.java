@@ -5,6 +5,7 @@ import com.beautytextile.exception.BusinessException;
 import com.beautytextile.exception.ResourceNotFoundException;
 import com.beautytextile.model.Product;
 import com.beautytextile.repository.ProductRepository;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
@@ -34,6 +35,18 @@ public class ProductService {
 
     public List<Product> search(String name) {
         return repo.findByNameContainingIgnoreCase(name == null ? "" : name);
+    }
+
+    public Page<Product> findAllPaged(int page, int size) {
+        return repo.findAll(PageRequest.of(page, size));
+    }
+
+    public Page<Product> findByCategoryPaged(String category, int page, int size) {
+        return repo.findByCategoryIgnoreCase(category, PageRequest.of(page, size));
+    }
+
+    public Page<Product> searchPaged(String query, int page, int size) {
+        return repo.search(query == null ? "" : query, PageRequest.of(page, size));
     }
 
     public Product findById(Long id) {

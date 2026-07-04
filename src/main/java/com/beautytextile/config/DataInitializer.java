@@ -18,6 +18,7 @@ public class DataInitializer implements CommandLineRunner {
     private final ReviewRepository reviewRepo;
     private final OrderRepository orderRepo;
     private final ProductVariantSizeRepository variantSizeRepo;
+    private final HeroSlideRepository heroSlideRepo;
     private final PasswordEncoder encoder;
 
     public DataInitializer(AdminUserRepository adminRepo,
@@ -26,6 +27,7 @@ public class DataInitializer implements CommandLineRunner {
                            ReviewRepository reviewRepo,
                            OrderRepository orderRepo,
                            ProductVariantSizeRepository variantSizeRepo,
+                           HeroSlideRepository heroSlideRepo,
                            PasswordEncoder encoder) {
         this.adminRepo = adminRepo;
         this.categoryRepo = categoryRepo;
@@ -33,6 +35,7 @@ public class DataInitializer implements CommandLineRunner {
         this.reviewRepo = reviewRepo;
         this.orderRepo = orderRepo;
         this.variantSizeRepo = variantSizeRepo;
+        this.heroSlideRepo = heroSlideRepo;
         this.encoder = encoder;
     }
 
@@ -42,6 +45,7 @@ public class DataInitializer implements CommandLineRunner {
         seedCategories();
         seedAppSettings();
         seedReviews();
+        seedHeroSlides();
         backfillFulfillmentStatus();
         backfillBarcodes();
     }
@@ -106,6 +110,34 @@ public class DataInitializer implements CommandLineRunner {
                 .gstPercentage(0)
                 .build());
         System.out.println("[DataInitializer] Created default app_settings (GST disabled)");
+    }
+
+    // ── Hero Slides (home page banner) ────────────────────────────────────────────
+
+    private void seedHeroSlides() {
+        if (heroSlideRepo.count() > 0) return;
+        heroSlideRepo.save(HeroSlide.builder()
+                .kicker("New Collection")
+                .title("Elegant ethnic wear for every celebration")
+                .text("Discover handpicked sarees, festive sets, and trendy styles designed to feel premium and look refined.")
+                .imagePath("/images/categories/saree/saree.svg")
+                .sortOrder(0)
+                .build());
+        heroSlideRepo.save(HeroSlide.builder()
+                .kicker("Worldwide Shipping")
+                .title("Styles that travel beautifully")
+                .text("From daily wear to festive statements, explore fashion-forward pieces that ship anywhere your customers are.")
+                .imagePath("/images/categories/kurthi/kurthi.svg")
+                .sortOrder(1)
+                .build());
+        heroSlideRepo.save(HeroSlide.builder()
+                .kicker("Freshly Launched")
+                .title("Collections for Women, Men & Kids")
+                .text("Browse elegant categories, stunning subcategories, and season-ready looks with a premium boutique feel.")
+                .imagePath("/images/categories/mens/mens.svg")
+                .sortOrder(2)
+                .build());
+        System.out.println("[DataInitializer] Seeded 3 default hero slides");
     }
 
     // ── Sample Reviews ────────────────────────────────────────────────────────

@@ -13,6 +13,8 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 
 import java.util.List;
 import java.util.Map;
@@ -53,6 +55,30 @@ public class ProductController {
             products = productService.findAll();
         }
         return products.stream().map(discountService::priced).toList();
+    }
+
+    @GetMapping("/paged")
+    public Map<String, Object> getPaged(@RequestParam(required = false) String category,
+                                        @RequestParam(required = false) String search,
+                                        @RequestParam(defaultValue = "0") int page,
+                                        @RequestParam(defaultValue = "12") int size) {
+        Page<Product> result;
+        if (search != null && !search.isBlank()) {
+            result = productService.searchPaged(search, page, size);
+        } else if (category != null && !category.isBlank()) {
+            result = productService.findByCategoryPaged(category, page, size);
+        } else {
+            result = productService.findAllPaged(page, size);
+        }
+        List<PricedProductResponse> priced = result.getContent().stream().map(discountService::priced).toList();
+        return Map.of(
+                "content", priced,
+                "page", result.getNumber(),
+                "size", result.getSize(),
+                "totalElements", result.getTotalElements(),
+                "totalPages", result.getTotalPages(),
+                "last", result.isLast()
+        );
     }
 
     @GetMapping("/{id}")

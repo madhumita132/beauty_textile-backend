@@ -3,7 +3,10 @@ package com.beautytextile.controller;
 import com.beautytextile.model.Category;
 import com.beautytextile.service.CategoryService;
 import com.beautytextile.service.CategoryService.CategoryNode;
+import com.beautytextile.service.FileStorageService;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
@@ -13,9 +16,11 @@ import java.util.Map;
 public class CategoryController {
 
     private final CategoryService service;
+    private final FileStorageService fileStorageService;
 
-    public CategoryController(CategoryService service) {
+    public CategoryController(CategoryService service, FileStorageService fileStorageService) {
         this.service = service;
+        this.fileStorageService = fileStorageService;
     }
 
     /** Flat list with parentId field. */
@@ -24,10 +29,11 @@ public class CategoryController {
         return service.findAll();
     }
 
-    /** Hierarchical tree: roots → children → grandchildren. */
+    /** Hierarchical tree: roots → children → grandchildren.
+     *  Pass ?activeOnly=true for the customer-facing pruned tree (inactive categories hidden). */
     @GetMapping("/tree")
-    public List<CategoryNode> getTree() {
-        return service.findTree();
+    public List<CategoryNode> getTree(@RequestParam(required = false, defaultValue = "false") boolean activeOnly) {
+        return activeOnly ? service.findActiveTree() : service.findTree();
     }
 
     @PostMapping
@@ -42,5 +48,18 @@ public class CategoryController {
     public Map<String, Object> delete(@PathVariable Long id) {
         service.delete(id);
         return Map.of("deleted", true, "id", id);
+    }
+
+    @PatchMapping("/{id}/active")
+    public Category setActive(@PathVariable Long id, @RequestBody Map<String, Object> body) {
+        boolean active = Boolean.TRUE.equals(body.get("active"));
+        return service.setActive(id, active);
+    }
+
+    @PostMapping(value = "/{id}/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public Map<String, String> uploadImage(@PathVariable Long id, @RequestParam("file") MultipartFile file) {
+        String imagePath = fileStorageService.store(file);
+        service.updateImagePath(id, imagePath);
+        return Map.of("imagePath", imagePath);
     }
 }

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.ColumnDefault;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -51,4 +52,10 @@ public class Category {
     @Column(name = "discount_value", precision = 10, scale = 2)
     @Builder.Default
     private java.math.BigDecimal discountValue = java.math.BigDecimal.ZERO;
+
+    /** Admin toggle — only active categories/subcategories are shown to customers. */
+    @Column(nullable = false)
+    @ColumnDefault("true")
+    @Builder.Default
+    private boolean active = true;
 }

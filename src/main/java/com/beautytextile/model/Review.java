@@ -34,6 +34,9 @@ public class Review {
     @Column(name = "review_comment", length = 1000)
     private String reviewComment;
 
+    @Column(name = "review_image_url", length = 255)
+    private String reviewImageUrl;
+
     /**
      * Moderation status.
      * PENDING → awaiting admin approval

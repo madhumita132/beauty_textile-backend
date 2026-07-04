@@ -38,6 +38,7 @@ public class ReviewService {
                 .mobileNumber(req.mobileNumber())
                 .rating(req.rating())
                 .reviewComment(req.reviewComment())
+            .reviewImageUrl(req.reviewImageUrl())
                 .status("PENDING")
                 .build();
         return repo.save(r);

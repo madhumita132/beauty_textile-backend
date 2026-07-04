@@ -5,6 +5,7 @@ import com.beautytextile.exception.ResourceNotFoundException;
 import com.beautytextile.model.Category;
 import com.beautytextile.repository.CategoryRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -23,12 +24,12 @@ public class CategoryService {
         return repo.findAll();
     }
 
-    /** Hierarchical tree of root categories → children → grandchildren. */
+    /** Hierarchical tree of root categories → children → grandchildren. Includes inactive categories (admin use). */
     public List<CategoryNode> findTree() {
         List<Category> all = repo.findAll();
         Map<Long, CategoryNode> nodes = new LinkedHashMap<>();
         for (Category c : all) {
-            nodes.put(c.getId(), new CategoryNode(c.getId(), c.getName(), c.getParentId(), c.getImagePath(), new ArrayList<>()));
+            nodes.put(c.getId(), new CategoryNode(c.getId(), c.getName(), c.getParentId(), c.getImagePath(), c.isActive(), new ArrayList<>()));
         }
         List<CategoryNode> roots = new ArrayList<>();
         for (Category c : all) {
@@ -42,6 +43,26 @@ public class CategoryService {
         }
         roots.sort(Comparator.comparing(CategoryNode::name));
         return roots;
+    }
+
+    /**
+     * Hierarchical tree pruned to only active categories (customer-facing use).
+     * An inactive root hides its whole subtree; an inactive child is simply omitted
+     * from its (active) parent's children.
+     */
+    public List<CategoryNode> findActiveTree() {
+        return findTree().stream()
+                .filter(CategoryNode::active)
+                .map(this::pruneInactive)
+                .collect(Collectors.toList());
+    }
+
+    private CategoryNode pruneInactive(CategoryNode node) {
+        List<CategoryNode> activeChildren = node.children().stream()
+                .filter(CategoryNode::active)
+                .map(this::pruneInactive)
+                .collect(Collectors.toList());
+        return new CategoryNode(node.id(), node.name(), node.parentId(), node.imagePath(), node.active(), activeChildren);
     }
 
     /** Create a new category. parentId is optional. */
@@ -64,6 +85,25 @@ public class CategoryService {
         repo.deleteById(id);
     }
 
+    @Transactional
+    public Category updateImagePath(Long id, String imagePath) {
+        if (imagePath == null || imagePath.isBlank()) {
+            throw new BusinessException("Category image path is required");
+        }
+        Category category = repo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Category not found: " + id));
+        category.setImagePath(imagePath);
+        return repo.save(category);
+    }
+
+    @Transactional
+    public Category setActive(Long id, boolean active) {
+        Category category = repo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Category not found: " + id));
+        category.setActive(active);
+        return repo.save(category);
+    }
+
     /** DTO for tree response. */
-    public record CategoryNode(Long id, String name, Long parentId, String imagePath, List<CategoryNode> children) {}
+    public record CategoryNode(Long id, String name, Long parentId, String imagePath, boolean active, List<CategoryNode> children) {}
 }

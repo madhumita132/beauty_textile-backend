@@ -11,24 +11,29 @@ import java.io.ByteArrayOutputStream;
 import java.util.EnumMap;
 import java.util.Map;
 
-/** Generates Code 128 barcode images and sequential barcode values (BT1001...). */
+/** Generates Code 128 barcode images and sequential barcode values (BT0000...). */
 @Service
 public class BarcodeService {
 
     private static final String PREFIX = "BT";
-    private static final int START = 1000;
+    private static final int START = 0;
+    private static final int WIDTH = 4;
 
     /** Build the next barcode value from the last product's barcode. */
     public String nextBarcode(String lastBarcode) {
         if (lastBarcode == null || !lastBarcode.startsWith(PREFIX)) {
-            return PREFIX + (START + 1);
+            return format(START);
         }
         try {
             int n = Integer.parseInt(lastBarcode.substring(PREFIX.length()));
-            return PREFIX + (n + 1);
+            return format(n + 1);
         } catch (NumberFormatException e) {
-            return PREFIX + (START + 1);
+            return format(START);
         }
+    }
+
+    private String format(int n) {
+        return PREFIX + String.format("%0" + WIDTH + "d", Math.max(n, START));
     }
 
     /** Generate a PNG Code 128 barcode for the given value. */
