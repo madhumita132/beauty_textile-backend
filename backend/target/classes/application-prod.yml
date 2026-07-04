@@ -1,0 +1,68 @@
+server:
+  port: ${PORT:8080}
+
+spring:
+  application:
+    name: beauty-textile-backend
+  datasource:
+    url: jdbc:mysql://${DB_HOST}:${DB_PORT:3306}/${DB_NAME}?useSSL=true&serverTimezone=UTC&allowPublicKeyRetrieval=true&autoReconnect=true
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximumPoolSize: 10
+      minimumIdle: 5
+      connectionTimeout: 30000
+      idleTimeout: 600000
+      maxLifetime: 1800000
+      auto-commit: true
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+app:
+  shop:
+    name: Beauty Textile
+    email: beautytextile.shop@gmail.com
+    phone: "8344515186"
+  upload:
+    dir: /tmp/uploads/products
+  jwt:
+    secret: ${JWT_SECRET}
+    expiration-ms: 86400000
+  cors:
+    allowed-origins: https://beautytextile.web.app,https://beautytextile.com
+  razorpay:
+    enabled: ${RAZORPAY_ENABLED:false}
+    key-id: ${RAZORPAY_KEY_ID:rzp_test_placeholder}
+    key-secret: ${RAZORPAY_SECRET:placeholder}
+    currency: INR
+
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    com.beautytextile: INFO
+    org.springframework.security: WARN
+  file:
+    name: logs/application.log
+  logback:
+    rollingpolicy:
+      max-file-size: 10MB
+      max-history: 30

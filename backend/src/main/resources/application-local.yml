@@ -1,0 +1,82 @@
+# ================================================================
+# Beauty Textile — Local Shop PC production profile
+# Activate with: SPRING_PROFILES_ACTIVE=local
+#
+# Architecture:
+#   MySQL (localhost:3306)
+#   Spring Boot (localhost:8080) — serves Angular + API
+#   Cloudflare Tunnel → https://beautytextile.trycloudflare.com
+# ================================================================
+
+server:
+  port: 8080
+
+spring:
+  application:
+    name: beauty-textile-backend
+  datasource:
+    url: jdbc:mysql://localhost:3306/beauty_textile?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=Asia/Kolkata&allowPublicKeyRetrieval=true
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:root}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximumPoolSize: 10
+      minimumIdle: 2
+      connectionTimeout: 30000
+      idleTimeout: 600000
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+        format_sql: false
+  # Serve Angular static files from src/main/resources/static/
+  web:
+    resources:
+      static-locations: classpath:/static/
+      cache:
+        period: 86400   # 1 day cache for static assets
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+app:
+  shop:
+    name: Beauty Textile
+    email: beautytextile.shop@gmail.com
+    phone: "8344515186"
+  upload:
+    # Product images saved next to the JAR in uploads/products/
+    dir: ./uploads/products
+  jwt:
+    # IMPORTANT: Change this to a long random string before going live!
+    # Generate one at: https://generate-random.org/api-token-generator
+    secret: ${JWT_SECRET:CHANGE-THIS-TO-A-64-CHAR-RANDOM-SECRET-KEY-BEFORE-GOING-LIVE!!}
+    expiration-ms: 86400000  # 24 hours
+  cors:
+    # Comma-separated — add your Cloudflare domain here
+    allowed-origins: https://beautytextile.trycloudflare.com,http://localhost:4200
+  razorpay:
+    enabled: false
+    key-id: ${RAZORPAY_KEY_ID:rzp_test_placeholder}
+    key-secret: ${RAZORPAY_SECRET:placeholder}
+    currency: INR
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+
+logging:
+  level:
+    com.beautytextile: INFO
+    org.springframework.security: WARN
+  file:
+    name: ./logs/beautytextile.log

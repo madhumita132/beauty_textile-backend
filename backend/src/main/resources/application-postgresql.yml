@@ -1,0 +1,81 @@
+
+# ============================================================
+# Beauty Textile — PostgreSQL profile (Railway production)
+# Activate with: SPRING_PROFILES_ACTIVE=postgresql
+#
+# Railway sets DATABASE_URL automatically when you link a PostgreSQL service.
+# Format: postgresql://user:pass@host:port/dbname
+# Spring needs JDBC format: jdbc:postgresql://host:port/dbname
+# The env var DATABASE_URL below accepts Railway's JDBC_URL variable name.
+# ============================================================
+
+server:
+  port: ${PORT:8080}
+
+spring:
+  application:
+    name: beauty-textile-backend
+
+  datasource:
+    # Railway injects DATABASE_URL as: postgresql://user:pass@host:port/db
+    # We also accept JDBC_DATABASE_URL (Railway's JDBC-formatted variable)
+    url: ${JDBC_DATABASE_URL:${DATABASE_URL:jdbc:postgresql://localhost:5432/beauty_textile}}
+    username: ${PGUSER:${DB_USERNAME:postgres}}
+    password: ${PGPASSWORD:${DB_PASSWORD:elvis}}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximumPoolSize: 10
+      minimumIdle: 2
+      connectionTimeout: 30000
+      idleTimeout: 600000
+      maxLifetime: 1800000
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: false
+        jdbc:
+          lob:
+            non_contextual_creation: true
+
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+app:
+  shop:
+    name: Beauty Textile
+    email: beautytextile.shop@gmail.com
+    phone: "8344515186"
+  upload:
+    dir: ${UPLOAD_DIR:/tmp/uploads/products}
+  jwt:
+    secret: ${JWT_SECRET:change-this-to-a-long-random-secret-key-at-least-32-bytes-long!!}
+    expiration-ms: 86400000
+  cors:
+    allowed-origins: ${CORS_ORIGINS:http://localhost:4200}
+  razorpay:
+    enabled: ${RAZORPAY_ENABLED:false}
+    key-id: ${RAZORPAY_KEY_ID:rzp_test_placeholder}
+    key-secret: ${RAZORPAY_SECRET:placeholder}
+    currency: INR
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    com.beautytextile: INFO
+    org.springframework.security: WARN
+

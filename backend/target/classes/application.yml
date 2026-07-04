@@ -1,0 +1,30 @@
+server:
+  port: 8089
+
+spring:
+  application:
+    name: beauty-textile-backend
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:postgresql}
+  # Datasource and other settings are in the active profile:
+  #   local       → application-local.yml   (shop PC + MySQL + serves Angular)
+  #   dev         → application-dev.yml     (development with ng serve proxy)
+  #   postgresql  → application-postgresql.yml (PostgreSQL)
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+  sql:
+    init:
+      mode: never
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+logging:
+  level:
+    com.beautytextile: INFO
