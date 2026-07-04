@@ -51,11 +51,6 @@ app:
   upload:
     # Product images saved next to the JAR in uploads/products/
     dir: ./uploads/products
-  jwt:
-    # IMPORTANT: Change this to a long random string before going live!
-    # Generate one at: https://generate-random.org/api-token-generator
-    secret: ${JWT_SECRET:CHANGE-THIS-TO-A-64-CHAR-RANDOM-SECRET-KEY-BEFORE-GOING-LIVE!!}
-    expiration-ms: 86400000  # 24 hours
   cors:
     # Comma-separated — add your Cloudflare domain here
     allowed-origins: https://beautytextile.trycloudflare.com,http://localhost:4200
