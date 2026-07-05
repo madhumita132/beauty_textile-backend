@@ -14,8 +14,8 @@ server:
   servlet:
     session:
       cookie:
-        same-site: none
-        secure: true
+        same-site: ${COOKIE_SAME_SITE:none}
+        secure: ${COOKIE_SECURE:true}
 
 spring:
   application:

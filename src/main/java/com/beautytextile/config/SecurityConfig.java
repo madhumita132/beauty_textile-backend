@@ -122,6 +122,10 @@ public class SecurityConfig {
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
+        // Cache the preflight (OPTIONS) response for 1 hour so the browser doesn't
+        // re-send a CORS preflight request before every single API call — this
+        // removes one full network round-trip from most cross-origin requests.
+        config.setMaxAge(3600L);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
         return source;
