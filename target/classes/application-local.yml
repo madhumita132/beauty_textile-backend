@@ -10,6 +10,12 @@
 
 server:
   port: 8080
+  forward-headers-strategy: framework
+  servlet:
+    session:
+      cookie:
+        same-site: none
+        secure: true
 
 spring:
   application:
