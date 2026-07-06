@@ -32,8 +32,15 @@ app:
     name: Beauty Textile
     email: beautytextile.shop@gmail.com
     phone: "8344515186"
+  storage:
+    provider: ${APP_STORAGE_PROVIDER:${STORAGE_PROVIDER:local}}
+    supabase:
+      project-url: ${SUPABASE_PROJECT_URL:}
+      service-key: ${SUPABASE_SERVICE_KEY:}
+      bucket: ${SUPABASE_BUCKET:product-images}
+      public-base-url: ${SUPABASE_PUBLIC_BASE_URL:}
   upload:
-    dir: ../uploads/products
+    dir: ${UPLOAD_DIR:../uploads/products}
   jwt:
     secret: dev-secret-key-change-in-production-must-be-32-bytes-long!!
     expiration-ms: 86400000

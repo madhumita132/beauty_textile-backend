@@ -2,7 +2,7 @@ package com.beautytextile.service.storage;
 
 import com.beautytextile.exception.BusinessException;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Primary;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -15,7 +15,7 @@ import java.util.UUID;
  * Set as @Primary — replace with S3StorageService and flip @Primary when deploying to cloud.
  */
 @Service
-@Primary
+@ConditionalOnProperty(name = "app.storage.provider", havingValue = "local", matchIfMissing = true)
 public class LocalImageStorageService implements ImageStorageService {
 
     private final Path root;

@@ -4,6 +4,7 @@ import com.beautytextile.exception.BusinessException;
 import com.beautytextile.exception.ResourceNotFoundException;
 import com.beautytextile.model.Category;
 import com.beautytextile.repository.CategoryRepository;
+import com.beautytextile.service.storage.ImageStorageService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,9 +15,11 @@ import java.util.stream.Collectors;
 public class CategoryService {
 
     private final CategoryRepository repo;
+    private final ImageStorageService imageStorage;
 
-    public CategoryService(CategoryRepository repo) {
+    public CategoryService(CategoryRepository repo, ImageStorageService imageStorage) {
         this.repo = repo;
+        this.imageStorage = imageStorage;
     }
 
     /** Flat list — every category with parentId. */
@@ -82,6 +85,11 @@ public class CategoryService {
     }
 
     public void delete(Long id) {
+        Category category = repo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Category not found: " + id));
+        if (category.getImagePath() != null) {
+            imageStorage.delete(category.getImagePath());
+        }
         repo.deleteById(id);
     }
 
@@ -92,8 +100,13 @@ public class CategoryService {
         }
         Category category = repo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found: " + id));
+        String oldPath = category.getImagePath();
         category.setImagePath(imagePath);
-        return repo.save(category);
+        Category saved = repo.save(category);
+        if (oldPath != null && !oldPath.equals(saved.getImagePath())) {
+            imageStorage.delete(oldPath);
+        }
+        return saved;
     }
 
     @Transactional

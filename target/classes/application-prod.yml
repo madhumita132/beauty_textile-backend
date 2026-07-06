@@ -33,8 +33,15 @@ app:
     name: Beauty Textile
     email: beautytextile.shop@gmail.com
     phone: "8344515186"
+  storage:
+    provider: ${APP_STORAGE_PROVIDER:${STORAGE_PROVIDER:supabase}}
+    supabase:
+      project-url: ${SUPABASE_PROJECT_URL:https://ltbrawpolhbnfehmyoyt.supabase.co}
+      service-key: ${SUPABASE_SERVICE_KEY:}
+      bucket: ${SUPABASE_BUCKET:product-images}
+      public-base-url: ${SUPABASE_PUBLIC_BASE_URL:https://ltbrawpolhbnfehmyoyt.supabase.co/storage/v1/object/public/product-images}
   upload:
-    dir: /tmp/uploads/products
+    dir: ${UPLOAD_DIR:/var/data/uploads/products}
   cors:
     allowed-origins: https://beautytextile.web.app,https://beautytextile.com,https://beauty-textile-frontend.pages.dev,https://beauty-textile-backend.onrender.com
   razorpay:

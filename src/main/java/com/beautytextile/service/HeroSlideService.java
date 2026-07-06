@@ -4,6 +4,7 @@ import com.beautytextile.exception.BusinessException;
 import com.beautytextile.exception.ResourceNotFoundException;
 import com.beautytextile.model.HeroSlide;
 import com.beautytextile.repository.HeroSlideRepository;
+import com.beautytextile.service.storage.ImageStorageService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,9 +14,11 @@ import java.util.List;
 public class HeroSlideService {
 
     private final HeroSlideRepository repo;
+    private final ImageStorageService imageStorage;
 
-    public HeroSlideService(HeroSlideRepository repo) {
+    public HeroSlideService(HeroSlideRepository repo, ImageStorageService imageStorage) {
         this.repo = repo;
+        this.imageStorage = imageStorage;
     }
 
     public List<HeroSlide> findAll() {
@@ -56,11 +59,21 @@ public class HeroSlideService {
         }
         HeroSlide slide = repo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Hero slide not found: " + id));
+        String oldPath = slide.getImagePath();
         slide.setImagePath(imagePath);
-        return repo.save(slide);
+        HeroSlide saved = repo.save(slide);
+        if (oldPath != null && !oldPath.equals(saved.getImagePath())) {
+            imageStorage.delete(oldPath);
+        }
+        return saved;
     }
 
     public void delete(Long id) {
+        HeroSlide slide = repo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Hero slide not found: " + id));
+        if (slide.getImagePath() != null) {
+            imageStorage.delete(slide.getImagePath());
+        }
         repo.deleteById(id);
     }
 }

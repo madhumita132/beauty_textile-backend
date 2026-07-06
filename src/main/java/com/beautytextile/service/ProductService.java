@@ -5,6 +5,7 @@ import com.beautytextile.exception.BusinessException;
 import com.beautytextile.exception.ResourceNotFoundException;
 import com.beautytextile.model.Product;
 import com.beautytextile.repository.ProductRepository;
+import com.beautytextile.service.storage.ImageStorageService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -19,10 +20,12 @@ public class ProductService {
 
     private final ProductRepository repo;
     private final BarcodeService barcodeService;
+    private final ImageStorageService imageStorage;
 
-    public ProductService(ProductRepository repo, BarcodeService barcodeService) {
+    public ProductService(ProductRepository repo, BarcodeService barcodeService, ImageStorageService imageStorage) {
         this.repo = repo;
         this.barcodeService = barcodeService;
+        this.imageStorage = imageStorage;
     }
 
     public List<Product> findAll() {
@@ -87,6 +90,8 @@ public class ProductService {
 
     public Product update(Long id, ProductRequest req) {
         Product p = findById(id);
+        String oldMainImage = p.getImageUrl();
+        List<String> oldExtraImages = new ArrayList<>(p.getExtraImages());
         p.setName(req.name());
         p.setDescription(req.description());
         p.setCategory(req.category());
@@ -102,12 +107,28 @@ public class ProductService {
         if (req.barcode() != null && !req.barcode().isBlank()) {
             p.setBarcode(req.barcode().trim());
         }
-        return repo.save(p);
+        Product saved = repo.save(p);
+
+        if (req.imageUrl() != null && !req.imageUrl().isBlank() && oldMainImage != null && !oldMainImage.equals(saved.getImageUrl())) {
+            imageStorage.delete(oldMainImage);
+        }
+        if (req.extraImages() != null) {
+            for (String oldImage : oldExtraImages) {
+                if (oldImage != null && !saved.getExtraImages().contains(oldImage)) {
+                    imageStorage.delete(oldImage);
+                }
+            }
+        }
+        return saved;
     }
 
     public void delete(Long id) {
-        if (!repo.existsById(id)) {
-            throw new ResourceNotFoundException("Product not found: " + id);
+        Product p = findById(id);
+        if (p.getImageUrl() != null) {
+            imageStorage.delete(p.getImageUrl());
+        }
+        for (String extraImage : p.getExtraImages()) {
+            imageStorage.delete(extraImage);
         }
         repo.deleteById(id);
     }
