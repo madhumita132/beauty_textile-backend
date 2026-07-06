@@ -33,7 +33,7 @@ app:
     email: beautytextile.shop@gmail.com
     phone: "8344515186"
   upload:
-    dir: ../uploads/products
+    dir: ${UPLOAD_DIR:../uploads/products}
   jwt:
     secret: dev-secret-key-change-in-production-must-be-32-bytes-long!!
     expiration-ms: 86400000

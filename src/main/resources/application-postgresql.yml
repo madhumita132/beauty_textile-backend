@@ -59,7 +59,7 @@ app:
     email: beautytextile.shop@gmail.com
     phone: "8344515186"
   upload:
-    dir: ${UPLOAD_DIR:/tmp/uploads/products}
+    dir: ${UPLOAD_DIR:/var/data/uploads/products}
   cors:
     allowed-origins: ${CORS_ORIGINS:http://localhost:4200}
   razorpay:
