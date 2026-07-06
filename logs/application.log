@@ -1,1 +1,2 @@
 2026-07-06 14:53:57 [HikariPool-1 housekeeper] WARN  com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=16h28m13s54ms767µs200ns).
+2026-07-06 18:52:35 [scheduling-1] ERROR c.b.service.BackupService - Backup process error: Cannot run program "mysqldump": CreateProcess error=2, The system cannot find the file specified

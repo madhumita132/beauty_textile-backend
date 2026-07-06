@@ -13,6 +13,7 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.util.UriUtils;
 
+import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
@@ -67,6 +68,12 @@ public class SupabaseImageStorageService implements ImageStorageService {
                 throw new BusinessException("Failed to upload image to Supabase: " + response.getStatusCode());
             }
             return publicBase + "/" + objectPath;
+        } catch (org.springframework.web.client.ResourceAccessException e) {
+            Throwable root = e.getMostSpecificCause();
+            if (root instanceof UnknownHostException) {
+                throw new BusinessException("Failed to upload image to Supabase: cannot resolve host. Check SUPABASE_PROJECT_URL");
+            }
+            throw new BusinessException("Failed to upload image to Supabase: " + e.getMessage());
         } catch (Exception e) {
             throw new BusinessException("Failed to upload image to Supabase: " + e.getMessage());
         }
