@@ -33,8 +33,16 @@ public class SupabaseImageStorageService implements ImageStorageService {
             @Value("${app.storage.supabase.bucket}") String bucket,
             @Value("${app.storage.supabase.public-base-url:}") String publicBaseUrl
     ) {
+        projectUrl = normalizeValue(projectUrl);
+        serviceKey = normalizeValue(serviceKey);
+        bucket = normalizeValue(bucket);
+        publicBaseUrl = normalizeValue(publicBaseUrl);
+
         if (isBlank(projectUrl) || isBlank(serviceKey) || isBlank(bucket)) {
             throw new IllegalStateException("Supabase is enabled but project-url/service-key/bucket is missing");
+        }
+        if (!projectUrl.startsWith("http://") && !projectUrl.startsWith("https://")) {
+            projectUrl = "https://" + projectUrl;
         }
         this.projectUrl = trimTrailingSlash(projectUrl);
         this.serviceKey = serviceKey;
@@ -124,5 +132,14 @@ public class SupabaseImageStorageService implements ImageStorageService {
 
     private boolean isBlank(String value) {
         return value == null || value.isBlank();
+    }
+
+    private String normalizeValue(String value) {
+        if (value == null) return null;
+        String v = value.trim();
+        if ((v.startsWith("\"") && v.endsWith("\"")) || (v.startsWith("'") && v.endsWith("'"))) {
+            v = v.substring(1, v.length() - 1).trim();
+        }
+        return v;
     }
 }

@@ -6,6 +6,8 @@ import com.beautytextile.exception.ResourceNotFoundException;
 import com.beautytextile.model.Product;
 import com.beautytextile.repository.ProductRepository;
 import com.beautytextile.service.storage.ImageStorageService;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -28,35 +30,43 @@ public class ProductService {
         this.imageStorage = imageStorage;
     }
 
+    @Cacheable(cacheNames = "products", key = "'all'")
     public List<Product> findAll() {
         return repo.findAll();
     }
 
+    @Cacheable(cacheNames = "products", key = "'cat:' + #category")
     public List<Product> findByCategory(String category) {
         return repo.findByCategoryIgnoreCase(category);
     }
 
+    @Cacheable(cacheNames = "products", key = "'search:' + (#name == null ? '' : #name)")
     public List<Product> search(String name) {
         return repo.findByNameContainingIgnoreCase(name == null ? "" : name);
     }
 
+    @Cacheable(cacheNames = "products", key = "'paged:all:' + #page + ':' + #size")
     public Page<Product> findAllPaged(int page, int size) {
         return repo.findAll(PageRequest.of(page, size));
     }
 
+    @Cacheable(cacheNames = "products", key = "'paged:cat:' + #category + ':' + #page + ':' + #size")
     public Page<Product> findByCategoryPaged(String category, int page, int size) {
         return repo.findByCategoryIgnoreCase(category, PageRequest.of(page, size));
     }
 
+    @Cacheable(cacheNames = "products", key = "'paged:search:' + (#query == null ? '' : #query) + ':' + #page + ':' + #size")
     public Page<Product> searchPaged(String query, int page, int size) {
         return repo.search(query == null ? "" : query, PageRequest.of(page, size));
     }
 
+    @Cacheable(cacheNames = "productById", key = "#id")
     public Product findById(Long id) {
         return repo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found: " + id));
     }
 
+    @Cacheable(cacheNames = "productByBarcode", key = "#barcode")
     public Product findByBarcode(String barcode) {
         return repo.findByBarcode(barcode)
                 .orElseThrow(() -> new ResourceNotFoundException("No product for barcode: " + barcode));
@@ -66,6 +76,7 @@ public class ProductService {
         return repo.findByStockLessThan(LOW_STOCK_THRESHOLD);
     }
 
+    @CacheEvict(cacheNames = {"products", "productById", "productByBarcode"}, allEntries = true)
     public Product create(ProductRequest req) {
         String barcode = (req.barcode() == null || req.barcode().isBlank())
                 ? generateUniqueBarcode()
@@ -88,6 +99,7 @@ public class ProductService {
         return repo.save(p);
     }
 
+    @CacheEvict(cacheNames = {"products", "productById", "productByBarcode"}, allEntries = true)
     public Product update(Long id, ProductRequest req) {
         Product p = findById(id);
         String oldMainImage = p.getImageUrl();
@@ -122,6 +134,7 @@ public class ProductService {
         return saved;
     }
 
+    @CacheEvict(cacheNames = {"products", "productById", "productByBarcode"}, allEntries = true)
     public void delete(Long id) {
         Product p = findById(id);
         if (p.getImageUrl() != null) {
@@ -134,6 +147,7 @@ public class ProductService {
     }
 
     /** Reduce stock, validating availability. Used by orders + billing. */
+    @CacheEvict(cacheNames = {"products", "productById", "productByBarcode"}, allEntries = true)
     public void reduceStock(Long productId, int quantity) {
         Product p = findById(productId);
         if (p.getStock() < quantity) {
@@ -145,6 +159,7 @@ public class ProductService {
     }
 
     /** Increase stock. Used by returns and exchanges. */
+    @CacheEvict(cacheNames = {"products", "productById", "productByBarcode"}, allEntries = true)
     public void addStock(Long productId, int quantity) {
         Product p = findById(productId);
         p.setStock(p.getStock() + quantity);

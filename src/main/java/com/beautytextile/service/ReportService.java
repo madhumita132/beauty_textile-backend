@@ -10,13 +10,13 @@ import com.beautytextile.repository.BillingRepository;
 import com.beautytextile.repository.OrderRepository;
 import com.beautytextile.repository.ProductRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 public class ReportService {
@@ -33,6 +33,7 @@ public class ReportService {
         this.productRepo = productRepo;
     }
 
+    @Transactional(readOnly = true)
     public MonthlyReport monthly(String yyyyMm) {
         YearMonth ym = YearMonth.parse(yyyyMm);
         LocalDateTime start = ym.atDay(1).atStartOfDay();
@@ -61,6 +62,7 @@ public class ReportService {
         return new MonthlyReport(yyyyMm, totalSales, totalOrders, totalProductsSold, top, low);
     }
 
+    @Transactional(readOnly = true)
     public DailySales daily(String yyyyMmDd) {
         LocalDate date = LocalDate.parse(yyyyMmDd);
         LocalDateTime start = date.atStartOfDay();
@@ -74,6 +76,7 @@ public class ReportService {
         return new DailySales(yyyyMmDd, revenue, count);
     }
 
+    @Transactional(readOnly = true)
     public List<ProductSales> productWise(LocalDate from, LocalDate to) {
         LocalDateTime start = from.atStartOfDay();
         LocalDateTime end = to.atTime(23, 59, 59);
@@ -89,6 +92,7 @@ public class ReportService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public List<CategorySales> categoryWise(LocalDate from, LocalDate to) {
         Map<String, CategoryAccumulator> byCategory = new HashMap<>();
 
@@ -106,6 +110,7 @@ public class ReportService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public DashboardSummary dashboardCurrentMonth() {
         YearMonth ym = YearMonth.now();
         LocalDateTime start = ym.atDay(1).atStartOfDay();

@@ -16,12 +16,15 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
 public class ReturnExchangeService {
+
+    private static final String STATUS_RETURNED = "RETURNED";
 
     private final BillingRepository billingRepo;
     private final ReturnRepository returnRepo;
@@ -44,11 +47,28 @@ public class ReturnExchangeService {
     // ── Search bills ────────────────────────────────────────────────────────
 
     public List<Billing> findBillsByPhone(String phone) {
-        return billingRepo.findByPhoneOrderByCreatedAtDesc(phone.trim());
+        return billingRepo.findByPhoneOrderByCreatedAtDescWithItems(phone.trim());
     }
 
     public List<Billing> findBillsByBarcode(String barcode) {
-        return billingRepo.findByProductBarcodeOrderByCreatedAtDesc(barcode.trim());
+        String q = barcode == null ? "" : barcode.trim();
+        if (q.isEmpty()) return List.of();
+
+        List<Billing> exact = billingRepo.findByProductBarcodeOrderByCreatedAtDesc(q);
+        if (q.length() < 3) {
+            return exact;
+        }
+
+        List<Billing> fuzzy = billingRepo.searchByProductBarcodeOrderByCreatedAtDesc(q);
+        if (exact.isEmpty()) {
+            return fuzzy;
+        }
+
+        // Keep exact results first, then append fuzzy-only bills.
+        Map<Long, Billing> merged = new LinkedHashMap<>();
+        exact.forEach(b -> merged.put(b.getId(), b));
+        fuzzy.forEach(b -> merged.putIfAbsent(b.getId(), b));
+        return List.copyOf(merged.values());
     }
 
     public Billing findBillById(Long id) {
@@ -59,7 +79,7 @@ public class ReturnExchangeService {
     public List<Billing> findBillsByDate(LocalDate date) {
         LocalDateTime start = date.atStartOfDay();
         LocalDateTime end   = date.plusDays(1).atStartOfDay();
-        return billingRepo.findByCreatedAtBetweenOrderByCreatedAtDesc(start, end);
+        return billingRepo.findByCreatedAtBetweenOrderByCreatedAtDescWithItems(start, end);
     }
 
     // ── Returns ─────────────────────────────────────────────────────────────
@@ -68,7 +88,7 @@ public class ReturnExchangeService {
     @Transactional
     public Return processReturn(ReturnRequest req) {
         Billing bill = findBillById(req.billId());
-        if ("RETURNED".equals(bill.getStatus())) {
+        if (STATUS_RETURNED.equals(bill.getStatus())) {
             throw new BusinessException("Bill #" + bill.getId() + " is already fully returned.");
         }
 
@@ -120,7 +140,7 @@ public class ReturnExchangeService {
 
         // Update bill status
         boolean allItemsReturned = isAllItemsReturned(bill, itemsToReturn);
-        bill.setStatus(allItemsReturned ? "RETURNED" : "PARTIALLY_RETURNED");
+        bill.setStatus(allItemsReturned ? STATUS_RETURNED : "PARTIALLY_RETURNED");
         billingRepo.save(bill);
 
         return returnRepo.save(returnRecord);
@@ -132,7 +152,7 @@ public class ReturnExchangeService {
     @Transactional
     public Exchange processExchange(ExchangeRequest req) {
         Billing bill = findBillById(req.oldBillId());
-        if ("RETURNED".equals(bill.getStatus())) {
+        if (STATUS_RETURNED.equals(bill.getStatus())) {
             throw new BusinessException("Bill #" + bill.getId() + " is already fully returned; cannot exchange.");
         }
 
@@ -235,7 +255,7 @@ public class ReturnExchangeService {
         return bill.getItems().stream()
                 .map(i -> new ReturnItemRequest(i.getProductId(), i.getProductName(),
                         i.getQuantity(), i.getPrice()))
-                .collect(Collectors.toList());
+            .toList();
     }
 
     private boolean isAllItemsReturned(Billing bill, List<ReturnItemRequest> returned) {

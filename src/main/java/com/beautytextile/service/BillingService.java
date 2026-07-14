@@ -9,6 +9,8 @@ import com.beautytextile.model.BillingItem;
 import com.beautytextile.model.Product;
 import com.beautytextile.repository.BillingRepository;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,10 +42,12 @@ public class BillingService {
         this.appSettingsService = appSettingsService;
     }
 
+    @Cacheable(cacheNames = "billing", key = "'all'")
     public List<Billing> findAll() {
-        return billingRepo.findAllByOrderByCreatedAtDesc();
+        return billingRepo.findAllWithItemsOrderByCreatedAtDesc();
     }
 
+    @Cacheable(cacheNames = "billingById", key = "#id")
     public Billing findById(Long id) {
         return billingRepo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Bill not found: " + id));
@@ -51,6 +55,7 @@ public class BillingService {
 
     /** Create a POS bill, reduce stock, optionally send WhatsApp. */
     @Transactional
+    @CacheEvict(cacheNames = {"billing", "billingById", "products", "productById", "productByBarcode"}, allEntries = true)
     public Billing createBill(BillingRequest req) {
         Billing bill = Billing.builder()
                 .customerName(req.customerName())

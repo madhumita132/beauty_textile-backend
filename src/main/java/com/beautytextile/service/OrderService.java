@@ -23,7 +23,7 @@ public class OrderService {
     }
 
     public List<Order> findAll() {
-        return orderRepo.findAllByOrderByCreatedAtDesc();
+        return orderRepo.findAllWithItemsByOrderByCreatedAtDesc();
     }
 
     public Order findById(Long id) {

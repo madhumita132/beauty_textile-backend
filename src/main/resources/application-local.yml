@@ -27,10 +27,12 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
       maximumPoolSize: 10
-      minimumIdle: 2
+      minimumIdle: 3
       connectionTimeout: 30000
+      initializationFailTimeout: 1
       idleTimeout: 600000
   jpa:
+    open-in-view: false
     hibernate:
       ddl-auto: update
     show-sql: false

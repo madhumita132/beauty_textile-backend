@@ -3,6 +3,7 @@ server:
   forward-headers-strategy: framework
   servlet:
     session:
+      timeout: ${SESSION_TIMEOUT:8h}
       cookie:
         same-site: ${COOKIE_SAME_SITE:none}
         secure: ${COOKIE_SECURE:true}
@@ -15,14 +16,20 @@ spring:
     username: ${DB_USER}
     password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      maximumPoolSize: ${DB_POOL_MAX:10}
+      minimumIdle: ${DB_POOL_MIN:3}
+      connectionTimeout: 30000
+      initializationFailTimeout: 1
 
   jpa:
+    open-in-view: false
     hibernate:
       ddl-auto: update
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
-    show-sql: true
+    show-sql: false
   servlet:
     multipart:
       max-file-size: 10MB
@@ -64,6 +71,7 @@ logging:
   level:
     com.beautytextile: INFO
     org.springframework.security: WARN
+    org.hibernate.SQL: WARN
   file:
     name: logs/application.log
   logback:
