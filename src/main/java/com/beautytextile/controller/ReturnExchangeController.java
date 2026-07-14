@@ -34,6 +34,11 @@ public class ReturnExchangeController {
         return ResponseEntity.ok(svc.findBillsByPhone(phone));
     }
 
+    @GetMapping("/search/barcode/{barcode}")
+    public ResponseEntity<List<Billing>> byBarcode(@PathVariable String barcode) {
+        return ResponseEntity.ok(svc.findBillsByBarcode(barcode));
+    }
+
     @GetMapping("/search/date")
     public ResponseEntity<List<Billing>> byDate(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {

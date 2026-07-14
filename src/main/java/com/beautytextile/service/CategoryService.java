@@ -5,6 +5,8 @@ import com.beautytextile.exception.ResourceNotFoundException;
 import com.beautytextile.model.Category;
 import com.beautytextile.repository.CategoryRepository;
 import com.beautytextile.service.storage.ImageStorageService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +27,18 @@ public class CategoryService {
     /** Flat list — every category with parentId. */
     public List<Category> findAll() {
         return repo.findAll();
+    }
+
+    public List<Category> search(String query) {
+        return repo.findByNameContainingIgnoreCase(query == null ? "" : query.trim());
+    }
+
+    public Page<Category> findAllPaged(int page, int size) {
+        return repo.findAll(PageRequest.of(page, size));
+    }
+
+    public Page<Category> searchPaged(String query, int page, int size) {
+        return repo.findByNameContainingIgnoreCase(query == null ? "" : query.trim(), PageRequest.of(page, size));
     }
 
     /** Hierarchical tree of root categories → children → grandchildren. Includes inactive categories (admin use). */

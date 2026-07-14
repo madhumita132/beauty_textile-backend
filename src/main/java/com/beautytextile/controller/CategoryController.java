@@ -5,6 +5,7 @@ import com.beautytextile.service.CategoryService;
 import com.beautytextile.service.CategoryService.CategoryNode;
 import com.beautytextile.service.FileStorageService;
 import org.springframework.http.MediaType;
+import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -25,8 +26,35 @@ public class CategoryController {
 
     /** Flat list with parentId field. */
     @GetMapping
-    public List<Category> getAll() {
+    public Object getAll(@RequestParam(required = false) String search,
+                         @RequestParam(required = false) Integer page,
+                         @RequestParam(required = false) Integer size) {
+        if (page != null || size != null) {
+            int resolvedPage = page != null ? page : 0;
+            int resolvedSize = size != null ? size : 50;
+            return getPagedResult(search, resolvedPage, resolvedSize);
+        }
+        if (search != null && !search.isBlank()) {
+            return service.search(search);
+        }
         return service.findAll();
+    }
+
+    private Map<String, Object> getPagedResult(String search, int page, int size) {
+        Page<Category> result;
+        if (search != null && !search.isBlank()) {
+            result = service.searchPaged(search, page, size);
+        } else {
+            result = service.findAllPaged(page, size);
+        }
+        return Map.of(
+                "content", result.getContent(),
+                "page", result.getNumber(),
+                "size", result.getSize(),
+                "totalElements", result.getTotalElements(),
+                "totalPages", result.getTotalPages(),
+                "last", result.isLast()
+        );
     }
 
     /** Hierarchical tree: roots → children → grandchildren.

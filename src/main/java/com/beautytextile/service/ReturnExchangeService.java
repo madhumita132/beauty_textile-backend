@@ -47,6 +47,10 @@ public class ReturnExchangeService {
         return billingRepo.findByPhoneOrderByCreatedAtDesc(phone.trim());
     }
 
+    public List<Billing> findBillsByBarcode(String barcode) {
+        return billingRepo.findByProductBarcodeOrderByCreatedAtDesc(barcode.trim());
+    }
+
     public Billing findBillById(Long id) {
         return billingRepo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Bill not found: " + id));

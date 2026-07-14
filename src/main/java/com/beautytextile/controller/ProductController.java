@@ -14,7 +14,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 
 import java.util.List;
 import java.util.Map;
@@ -44,8 +43,15 @@ public class ProductController {
     }
 
     @GetMapping
-    public List<PricedProductResponse> getAll(@RequestParam(required = false) String category,
-                                              @RequestParam(required = false) String search) {
+    public Object getAll(@RequestParam(required = false) String category,
+                         @RequestParam(required = false) String search,
+                         @RequestParam(required = false) Integer page,
+                         @RequestParam(required = false) Integer size) {
+        if (page != null || size != null) {
+            int resolvedPage = page != null ? page : 0;
+            int resolvedSize = size != null ? size : 50;
+            return getPagedResult(category, search, resolvedPage, resolvedSize);
+        }
         List<Product> products;
         if (search != null && !search.isBlank()) {
             products = productService.search(search);
@@ -62,6 +68,10 @@ public class ProductController {
                                         @RequestParam(required = false) String search,
                                         @RequestParam(defaultValue = "0") int page,
                                         @RequestParam(defaultValue = "12") int size) {
+        return getPagedResult(category, search, page, size);
+    }
+
+    private Map<String, Object> getPagedResult(String category, String search, int page, int size) {
         Page<Product> result;
         if (search != null && !search.isBlank()) {
             result = productService.searchPaged(search, page, size);

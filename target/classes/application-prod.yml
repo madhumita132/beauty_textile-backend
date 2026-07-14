@@ -43,7 +43,7 @@ app:
   upload:
     dir: ${UPLOAD_DIR:/var/data/uploads/products}
   cors:
-    allowed-origins: https://beautytextile.web.app,https://beautytextile.com,https://beauty-textile-frontend.pages.dev,https://beauty-textile-backend.onrender.com
+    allowed-origins: ${CORS_ORIGINS:https://beauty-textile-frontend.pages.dev,https://*.pages.dev,https://*.onrender.com}
   razorpay:
     enabled: ${RAZORPAY_ENABLED:false}
     key-id: ${RAZORPAY_KEY_ID:rzp_test_placeholder}

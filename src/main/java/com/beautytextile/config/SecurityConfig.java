@@ -118,7 +118,12 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         // Use patterns so any localhost port works in dev (e.g. ng serve on :51907)
-        config.setAllowedOriginPatterns(List.of(allowedOrigins.split(",")));
+        List<String> originPatterns = List.of(allowedOrigins.split(","))
+            .stream()
+            .map(String::trim)
+            .filter(s -> !s.isEmpty())
+            .toList();
+        config.setAllowedOriginPatterns(originPatterns);
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
