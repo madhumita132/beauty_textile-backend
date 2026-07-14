@@ -59,12 +59,12 @@ app:
     email: beautytextile.shop@gmail.com
     phone: "8344515186"
   storage:
-    provider: supabase
+    provider: ${APP_STORAGE_PROVIDER:${STORAGE_PROVIDER:local}}
     supabase:
-      project-url: https://ltbrawpolhbnfehmyoyt.supabase.co
-      service-key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx0YnJhd3BvaGxibmZlaG15b3l0Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MzEzMjA0NCwiZXhwIjoyMDk4NzA4MDQ0fQ.OO_rTcYtYQ-eYQ3NeqgLVAilU446Z-LsZBp0cdAfSx0
-      bucket: product-images
-      public-base-url: https://ltbrawpolhbnfehmyoyt.supabase.co/storage/v1/object/public/product-images
+      project-url: ${SUPABASE_PROJECT_URL:}
+      service-key: ${SUPABASE_SERVICE_KEY:}
+      bucket: ${SUPABASE_BUCKET:product-images}
+      public-base-url: ${SUPABASE_PUBLIC_BASE_URL:}
   upload:
     dir: ${UPLOAD_DIR:/var/data/uploads/products}
   cors:
