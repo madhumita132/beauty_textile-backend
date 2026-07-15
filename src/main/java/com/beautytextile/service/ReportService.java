@@ -16,10 +16,15 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
+import java.time.ZoneId;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class ReportService {
+
+    private static final String UNKNOWN_CATEGORY = "Unknown";
+    private static final ZoneId APP_ZONE = ZoneId.systemDefault();
 
     private final OrderRepository orderRepo;
     private final BillingRepository billingRepo;
@@ -43,7 +48,7 @@ public class ReportService {
         List<Billing> bills = billingRepo.findByCreatedAtBetween(start, end);
 
         BigDecimal totalSales = sumOrderTotal(orders).add(sumBillingTotal(bills));
-        long totalOrders = orders.size() + bills.size();
+        long totalOrders = (long) orders.size() + bills.size();
 
         Map<Long, ProductAccumulator> acc = aggregateProductSales(orders, bills);
         long totalProductsSold = acc.values().stream().mapToLong(a -> a.qty).sum();
@@ -72,7 +77,7 @@ public class ReportService {
         List<Billing> bills = billingRepo.findByCreatedAtBetween(start, end);
 
         BigDecimal revenue = sumOrderTotal(orders).add(sumBillingTotal(bills));
-        long count = orders.size() + bills.size();
+        long count = (long) orders.size() + bills.size();
         return new DailySales(yyyyMmDd, revenue, count);
     }
 
@@ -95,14 +100,12 @@ public class ReportService {
     @Transactional(readOnly = true)
     public List<CategorySales> categoryWise(LocalDate from, LocalDate to) {
         Map<String, CategoryAccumulator> byCategory = new HashMap<>();
+        Map<Long, String> productCategory = buildProductCategoryMap();
 
-        for (ProductSales ps : productWise(from, to)) {
-            Product p = productRepo.findById(ps.productId()).orElse(null);
-            String category = p == null ? "Unknown" : p.getCategory();
-            CategoryAccumulator acc = byCategory.computeIfAbsent(category, c -> new CategoryAccumulator());
-            acc.qty += ps.quantitySold();
-            acc.revenue = acc.revenue.add(ps.revenue());
-        }
+        addCategoryTotals(byCategory, productCategory, aggregateProductSales(
+                orderRepo.findByCreatedAtBetween(from.atStartOfDay(), to.atTime(23, 59, 59)),
+                billingRepo.findByCreatedAtBetween(from.atStartOfDay(), to.atTime(23, 59, 59))
+        ));
 
         return byCategory.entrySet().stream()
                 .map(e -> new CategorySales(e.getKey(), e.getValue().qty, e.getValue().revenue))
@@ -112,7 +115,7 @@ public class ReportService {
 
     @Transactional(readOnly = true)
     public DashboardSummary dashboardCurrentMonth() {
-        YearMonth ym = YearMonth.now();
+        YearMonth ym = YearMonth.now(APP_ZONE);
         LocalDateTime start = ym.atDay(1).atStartOfDay();
         LocalDateTime end = ym.atEndOfMonth().atTime(23, 59, 59);
 
@@ -121,7 +124,7 @@ public class ReportService {
         List<Billing> bills = billingRepo.findByCreatedAtBetween(start, end);
 
         BigDecimal totalSales = sumOrderTotal(orders).add(sumBillingTotal(bills));
-        long totalOrders = orders.size() + bills.size();
+        long totalOrders = (long) orders.size() + bills.size();
         Map<Long, ProductAccumulator> acc = aggregateProductSales(orders, bills);
         long totalProductsSold = acc.values().stream().mapToLong(a -> a.qty).sum();
 
@@ -130,16 +133,11 @@ public class ReportService {
                 .sorted(Comparator.comparing(ProductSales::quantitySold).reversed())
                 .toList();
         List<ProductSales> top = ranked.stream().limit(5).toList();
+        Map<Long, String> productCategory = buildProductCategoryMap();
 
         // Category breakdown (in-memory, no extra queries)
         Map<String, CategoryAccumulator> byCat = new HashMap<>();
-        for (ProductSales ps : ranked) {
-            Product p = productRepo.findById(ps.productId()).orElse(null);
-            String cat = p == null ? "Unknown" : p.getCategory();
-            CategoryAccumulator ca = byCat.computeIfAbsent(cat, c -> new CategoryAccumulator());
-            ca.qty += ps.quantitySold();
-            ca.revenue = ca.revenue.add(ps.revenue());
-        }
+        addCategoryTotals(byCat, productCategory, acc);
         List<CategorySales> category = byCat.entrySet().stream()
                 .map(e -> new CategorySales(e.getKey(), e.getValue().qty, e.getValue().revenue))
                 .sorted(Comparator.comparing(CategorySales::revenue).reversed())
@@ -162,7 +160,7 @@ public class ReportService {
                 .map(e -> new DailySales(e.getKey(), e.getValue()[0], e.getValue()[1].longValue()))
                 .toList();
 
-        long lowStock = productRepo.findByStockLessThan(5).size();
+        long lowStock = productRepo.countByStockLessThan(5);
 
         return new DashboardSummary(totalSales, totalOrders, totalProductsSold, lowStock, top, category, daily);
     }
@@ -195,6 +193,26 @@ public class ReportService {
     private BigDecimal sumBillingTotal(List<Billing> bills) {
         return bills.stream().map(Billing::getTotalAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    private Map<Long, String> buildProductCategoryMap() {
+        return productRepo.findAll().stream()
+                .collect(Collectors.toMap(Product::getId,
+                        p -> p.getCategory() == null ? UNKNOWN_CATEGORY : p.getCategory(),
+                        (first, second) -> first,
+                        HashMap::new));
+    }
+
+    private void addCategoryTotals(Map<String, CategoryAccumulator> byCategory,
+                                   Map<Long, String> productCategory,
+                                   Map<Long, ProductAccumulator> productTotals) {
+        for (Map.Entry<Long, ProductAccumulator> entry : productTotals.entrySet()) {
+            String category = productCategory.getOrDefault(entry.getKey(), UNKNOWN_CATEGORY);
+            ProductAccumulator product = entry.getValue();
+            CategoryAccumulator acc = byCategory.computeIfAbsent(category, c -> new CategoryAccumulator());
+            acc.qty += product.qty;
+            acc.revenue = acc.revenue.add(product.revenue);
+        }
     }
 
     private static class ProductAccumulator {

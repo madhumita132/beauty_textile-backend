@@ -12,8 +12,16 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Central discount engine.
@@ -28,6 +36,8 @@ import java.util.List;
  */
 @Service
 public class DiscountService {
+
+    private static final ZoneId APP_ZONE = ZoneId.systemDefault();
 
     private final ProductRepository   productRepo;
     private final CategoryRepository  categoryRepo;
@@ -44,7 +54,7 @@ public class DiscountService {
     // ── Compute discount amount for a single product ────────────────────────
 
     public BigDecimal computeDiscount(Product p) {
-        List<Offer> activeOffers = offerRepo.findActiveOffers(LocalDate.now());
+        List<Offer> activeOffers = offerRepo.findActiveOffers(LocalDate.now(APP_ZONE));
 
         // 1. Product-level discount
         if (hasDiscount(p.getDiscountType(), p.getDiscountValue())) {
@@ -85,6 +95,46 @@ public class DiscountService {
 
     public PricedProductResponse priced(Product p) {
         return new PricedProductResponse(p, computeDiscount(p));
+    }
+
+    public List<PricedProductResponse> pricedBulk(Collection<Product> products) {
+        if (products == null || products.isEmpty()) {
+            return List.of();
+        }
+
+        List<Product> productList = new ArrayList<>(products);
+        LocalDate today = LocalDate.now(APP_ZONE);
+        List<Offer> activeOffers = offerRepo.findActiveOffers(today);
+
+        OfferIndex offerIndex = buildOfferIndex(activeOffers);
+
+        Set<String> categoryKeys = new HashSet<>();
+        for (Product p : productList) {
+            if (p.getCategory() != null && !p.getCategory().isBlank()) {
+                categoryKeys.add(normalizeKey(p.getCategory()));
+            }
+        }
+
+        Map<String, Category> categoryDiscounts = new HashMap<>();
+        if (!categoryKeys.isEmpty()) {
+            for (Category c : categoryRepo.findByLowerNameIn(categoryKeys)) {
+                if (c.getName() != null) {
+                    categoryDiscounts.put(normalizeKey(c.getName()), c);
+                }
+            }
+        }
+
+        List<PricedProductResponse> result = new ArrayList<>(productList.size());
+        for (Product p : productList) {
+            BigDecimal discount = computeDiscountFast(
+                    p,
+                    offerIndex.productOffers(),
+                    offerIndex.categoryOffers(),
+                    categoryDiscounts,
+                    offerIndex.globalOffer());
+            result.add(new PricedProductResponse(p, discount));
+        }
+        return result;
     }
 
     // ── Apply product-level discounts ────────────────────────────────────────
@@ -159,7 +209,7 @@ public class DiscountService {
     public List<Offer> getAllOffers() { return offerRepo.findAll(); }
 
     public List<Offer> getActiveOffers() {
-        return offerRepo.findActiveOffers(LocalDate.now());
+        return offerRepo.findActiveOffers(LocalDate.now(APP_ZONE));
     }
 
     // ── Billing discount ─────────────────────────────────────────────────────
@@ -185,4 +235,61 @@ public class DiscountService {
         }
         return BigDecimal.ZERO;
     }
+
+    private BigDecimal computeDiscountFast(Product p,
+                                           Map<Long, Offer> productOffers,
+                                           Map<String, Offer> categoryOffers,
+                                           Map<String, Category> categoryDiscounts,
+                                           Offer globalOffer) {
+        if (hasDiscount(p.getDiscountType(), p.getDiscountValue())) {
+            return calcAmount(p.getPrice(), p.getDiscountType(), p.getDiscountValue());
+        }
+
+        Offer productOffer = productOffers.get(p.getId());
+        if (productOffer != null) {
+            return calcAmount(p.getPrice(), productOffer.getDiscountType(), productOffer.getDiscountValue());
+        }
+
+        String categoryKey = normalizeKey(p.getCategory());
+        Offer categoryOffer = categoryOffers.get(categoryKey);
+        if (categoryOffer != null) {
+            return calcAmount(p.getPrice(), categoryOffer.getDiscountType(), categoryOffer.getDiscountValue());
+        }
+
+        Category category = categoryDiscounts.get(categoryKey);
+        if (category != null && hasDiscount(category.getDiscountType(), category.getDiscountValue())) {
+            return calcAmount(p.getPrice(), category.getDiscountType(), category.getDiscountValue());
+        }
+
+        if (globalOffer != null) {
+            return calcAmount(p.getPrice(), globalOffer.getDiscountType(), globalOffer.getDiscountValue());
+        }
+
+        return BigDecimal.ZERO;
+    }
+
+    private String normalizeKey(String value) {
+        return value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private OfferIndex buildOfferIndex(List<Offer> activeOffers) {
+        Map<Long, Offer> productOffers = new HashMap<>();
+        Map<String, Offer> categoryOffers = new HashMap<>();
+        Offer globalOffer = null;
+
+        for (Offer o : activeOffers) {
+            if ("PRODUCT".equals(o.getOfferScope()) && o.getProductId() != null) {
+                productOffers.putIfAbsent(o.getProductId(), o);
+            } else if ("CATEGORY".equals(o.getOfferScope()) && o.getCategoryName() != null) {
+                categoryOffers.putIfAbsent(normalizeKey(o.getCategoryName()), o);
+            } else if ("GLOBAL".equals(o.getOfferScope()) && globalOffer == null) {
+                globalOffer = o;
+            }
+        }
+        return new OfferIndex(productOffers, categoryOffers, globalOffer);
+    }
+
+    private record OfferIndex(Map<Long, Offer> productOffers,
+                              Map<String, Offer> categoryOffers,
+                              Offer globalOffer) {}
 }

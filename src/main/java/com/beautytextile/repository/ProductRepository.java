@@ -44,6 +44,9 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     @Query("SELECT p FROM Product p WHERE p.stock <= :threshold")
     Page<Product> findByStockLessThanPage(@Param("threshold") int threshold, Pageable pageable);
 
+    @Query("SELECT COUNT(p) FROM Product p WHERE p.stock < :threshold")
+    long countByStockLessThan(@Param("threshold") int threshold);
+
     // ── Non-paged (used internally / small datasets) ──────────────────────
 
     List<Product> findByCategoryIgnoreCase(String category);

@@ -43,10 +43,10 @@ app:
   storage:
     provider: ${APP_STORAGE_PROVIDER:${STORAGE_PROVIDER:supabase}}
     supabase:
-      project-url: ${SUPABASE_PROJECT_URL:}
-      service-key: ${SUPABASE_SERVICE_KEY:}
-      bucket: ${SUPABASE_BUCKET:product-images}
-      public-base-url: ${SUPABASE_PUBLIC_BASE_URL:}
+      project-url: ${SUPABASE_PROJECT_URL:${SUPABASE_URL:${SUPABASE_S3_ENDPOINT:}}}
+      service-key: ${SUPABASE_SERVICE_KEY:${SUPABASE_KEY:}}
+      bucket: ${SUPABASE_BUCKET:${SUPABASE_STORAGE_BUCKET:product-images}}
+      public-base-url: ${SUPABASE_PUBLIC_BASE_URL:${SUPABASE_PUBLIC_URL:}}
   upload:
     dir: ${UPLOAD_DIR:/var/data/uploads/products}
   cors:

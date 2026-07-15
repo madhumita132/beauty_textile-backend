@@ -1,0 +1,25 @@
+# VCS and editor
+.git
+.gitignore
+.github
+.idea
+.vscode
+
+# Build output and local runtime data
+target
+logs
+backups
+uploads
+
+# Local docs/notes
+prompt Md.txt
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Env files
+.env
+
+# Java bytecode
+**/*.class

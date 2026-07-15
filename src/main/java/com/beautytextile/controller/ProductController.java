@@ -60,7 +60,7 @@ public class ProductController {
         } else {
             products = productService.findAll();
         }
-        return products.stream().map(discountService::priced).toList();
+        return discountService.pricedBulk(products);
     }
 
     @GetMapping("/paged")
@@ -80,7 +80,7 @@ public class ProductController {
         } else {
             result = productService.findAllPaged(page, size);
         }
-        List<PricedProductResponse> priced = result.getContent().stream().map(discountService::priced).toList();
+        List<PricedProductResponse> priced = discountService.pricedBulk(result.getContent());
         return Map.of(
                 "content", priced,
                 "page", result.getNumber(),
