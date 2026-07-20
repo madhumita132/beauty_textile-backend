@@ -5,7 +5,6 @@ import com.beautytextile.model.Billing;
 import com.beautytextile.model.BillingItem;
 import com.beautytextile.model.Order;
 import com.beautytextile.model.OrderItem;
-import com.beautytextile.model.Product;
 import com.beautytextile.repository.BillingRepository;
 import com.beautytextile.repository.OrderRepository;
 import com.beautytextile.repository.ProductRepository;
@@ -196,9 +195,12 @@ public class ReportService {
     }
 
     private Map<Long, String> buildProductCategoryMap() {
-        return productRepo.findAll().stream()
-                .collect(Collectors.toMap(Product::getId,
-                        p -> p.getCategory() == null ? UNKNOWN_CATEGORY : p.getCategory(),
+        // Uses a lightweight id+category projection instead of loading full Product
+        // entities on every report/dashboard request (avoids repeated per-request
+        // memory spikes from element collections like extraImages).
+        return productRepo.findAllCategoryView().stream()
+                .collect(Collectors.toMap(ProductRepository.ProductCategoryView::getId,
+                        v -> v.getCategory() == null ? UNKNOWN_CATEGORY : v.getCategory(),
                         (first, second) -> first,
                         HashMap::new));
     }

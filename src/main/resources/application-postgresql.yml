@@ -12,6 +12,15 @@
 server:
   port: ${PORT:8080}
   forward-headers-strategy: framework
+  # Default embedded Tomcat allows 200 threads, which is far more than a 1-2 admin
+  # deployment needs and adds unnecessary memory overhead on small instances.
+  tomcat:
+    threads:
+      max: ${TOMCAT_MAX_THREADS:20}
+      min-spare: ${TOMCAT_MIN_THREADS:5}
+    max-connections: ${TOMCAT_MAX_CONNECTIONS:100}
+    accept-count: ${TOMCAT_ACCEPT_COUNT:20}
+    connection-timeout: 20000
   servlet:
     session:
       timeout: ${SESSION_TIMEOUT:8h}
@@ -31,11 +40,13 @@ spring:
     password: ${PGPASSWORD:${DB_PASSWORD:elvis}}
     driver-class-name: org.postgresql.Driver
     hikari:
-      maximumPoolSize: 10
-      minimumIdle: 2
+      # Sized for 1-2 concurrent admin users, not general traffic — a smaller pool means
+      # fewer DB connections/threads held in memory on constrained instances.
+      maximumPoolSize: ${DB_POOL_MAX:5}
+      minimumIdle: ${DB_POOL_MIN:1}
       connectionTimeout: 30000
-      idleTimeout: 600000
-      maxLifetime: 1800000
+      idleTimeout: 300000
+      maxLifetime: 1200000
 
   jpa:
     hibernate:
@@ -84,6 +95,11 @@ management:
   endpoint:
     health:
       show-details: always
+  health:
+    # Disk-space indicator does a filesystem stat check on every health probe; not useful
+    # for this app and removes periodic I/O overhead when Render polls the health endpoint.
+    diskspace:
+      enabled: false
 
 logging:
   level:

@@ -94,5 +94,18 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     @Query("SELECT DISTINCT p.supplier FROM Product p WHERE p.supplier IS NOT NULL ORDER BY p.supplier")
     List<String> findAllSuppliers();
+
+    /**
+     * Lightweight id+category projection used by reports/dashboard aggregation.
+     * Avoids loading full Product entities (extraImages, description, pricing, etc.)
+     * on every report/dashboard request, which was a repeated per-request memory spike.
+     */
+    @Query("SELECT p.id as id, p.category as category FROM Product p")
+    List<ProductCategoryView> findAllCategoryView();
+
+    interface ProductCategoryView {
+        Long getId();
+        String getCategory();
+    }
 }
 
