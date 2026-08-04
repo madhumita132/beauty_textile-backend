@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -36,7 +37,11 @@ public class AppBeansConfig {
         return username -> repo.findByUsername(username)
                 .map(u -> User.withUsername(u.getUsername())
                         .password(u.getPassword())
-                        .authorities(List.of(() -> "ROLE_" + (u.getRole() == null ? "ADMIN" : u.getRole())))
+                        // Must be a genuinely Serializable GrantedAuthority (not a raw lambda) —
+                        // Spring Session JDBC serializes the whole SecurityContext to bytes for
+                        // DB storage, and a lambda-backed GrantedAuthority fails that conversion.
+                        .authorities(List.of(new SimpleGrantedAuthority(
+                                "ROLE_" + (u.getRole() == null ? "ADMIN" : u.getRole()))))
                         .build())
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
     }
