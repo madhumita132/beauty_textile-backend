@@ -35,6 +35,10 @@ public interface BillingRepository extends JpaRepository<Billing, Long> {
        @Query("SELECT DISTINCT b FROM Billing b LEFT JOIN FETCH b.items WHERE b.phone = :phone ORDER BY b.createdAt DESC")
        List<Billing> findByPhoneOrderByCreatedAtDescWithItems(@Param("phone") String phone);
 
+       @Query("SELECT DISTINCT b FROM Billing b LEFT JOIN FETCH b.items " +
+              "WHERE LOWER(TRIM(b.customerName)) LIKE LOWER(CONCAT('%', TRIM(:name), '%')) ORDER BY b.createdAt DESC")
+       List<Billing> findByCustomerNameContainingIgnoreCaseOrderByCreatedAtDescWithItems(@Param("name") String name);
+
        @Query("SELECT DISTINCT b FROM Billing b LEFT JOIN FETCH b.items WHERE b.createdAt BETWEEN :start AND :end ORDER BY b.createdAt DESC")
        List<Billing> findByCreatedAtBetweenOrderByCreatedAtDescWithItems(@Param("start") LocalDateTime start,
                                                                                                                          @Param("end") LocalDateTime end);

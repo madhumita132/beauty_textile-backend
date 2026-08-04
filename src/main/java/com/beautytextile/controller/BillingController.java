@@ -32,4 +32,18 @@ public class BillingController {
     public Billing byId(@PathVariable Long id) {
         return service.findById(id);
     }
+
+    /** Search past bills by customer name and/or phone and/or exact date (yyyy-MM-dd). */
+    @GetMapping("/search")
+    public List<Billing> search(@RequestParam(required = false) String name,
+                                 @RequestParam(required = false) String phone,
+                                 @RequestParam(required = false) String date) {
+        return service.search(name, phone, date);
+    }
+
+    /** Edit a previously-saved bill (items, customer info, discount) after billing. */
+    @PutMapping("/{id}")
+    public Billing update(@PathVariable Long id, @Valid @RequestBody BillingRequest req) {
+        return service.updateBill(id, req);
+    }
 }

@@ -13,6 +13,11 @@ server:
   forward-headers-strategy: framework
   servlet:
     session:
+      # Sliding idle timeout — any authenticated request (including the frontend's
+      # silent keep-alive ping) resets this countdown, so an actively-used session
+      # never expires mid-shift. A genuinely abandoned tab still logs out after this
+      # much inactivity, which is the security boundary we want (not an infinite session).
+      timeout: ${SESSION_TIMEOUT:8h}
       cookie:
         same-site: ${COOKIE_SAME_SITE:none}
         secure: ${COOKIE_SECURE:true}
@@ -20,6 +25,12 @@ server:
 spring:
   application:
     name: beauty-textile-backend
+  # Store sessions in MySQL (not app-server memory) so a login survives an app restart
+  # (crash/update/reboot) instead of forcing everyone to log back in.
+  session:
+    store-type: jdbc
+    jdbc:
+      initialize-schema: always
   datasource:
     url: jdbc:mysql://localhost:3306/beauty_textile?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=Asia/Kolkata&allowPublicKeyRetrieval=true
     username: ${DB_USERNAME:root}

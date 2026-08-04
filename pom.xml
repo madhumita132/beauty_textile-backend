@@ -45,6 +45,13 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-cache</artifactId>
         </dependency>
+        <!-- Persists HttpSessions to the DB instead of app-server memory. Without this,
+             every container restart/redeploy (Railway) or scale event wipes all logged-in
+             sessions instantly, forcing re-login regardless of server.servlet.session.timeout. -->
+        <dependency>
+            <groupId>org.springframework.session</groupId>
+            <artifactId>spring-session-jdbc</artifactId>
+        </dependency>
 
 
         <!-- PostgreSQL (activate with SPRING_PROFILES_ACTIVE=postgresql or postgres) -->

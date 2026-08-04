@@ -32,6 +32,15 @@ spring:
   application:
     name: beauty-textile-backend
 
+  # Store sessions in Postgres (not app-server memory) so an active login survives
+  # container restarts/redeploys — this is what actually fixes recurring forced
+  # re-logins, since server.servlet.session.timeout alone can't help if the process
+  # holding the in-memory session is recycled before the idle timeout elapses.
+  session:
+    store-type: jdbc
+    jdbc:
+      initialize-schema: always
+
   datasource:
     # Railway injects DATABASE_URL as: postgresql://user:pass@host:port/db
     # We also accept JDBC_DATABASE_URL (Railway's JDBC-formatted variable)
